@@ -30,4 +30,4 @@ class DataExtractor:
         # store_df = pd.DataFrame(store_data_list)
         return response
         
-print(requests.get('https://aqj7u5id95.execute-api.eu-west-1.amazonaws.com/prod/number_stores', headers = {'x-api-key' : 'yFBQbwXe9J3sd6zWVAMrK6lcxxr0q1lr2PT6DDMX'}))
+print(requests.get('https://aqj7u5id95.execute-api.eu-west-1.amazonaws.com/prod/number_stores/2', headers = {'x-api-key' : 'yFBQbwXe9J3sd6zWVAMrK6lcxxr0q1lr2PT6DDMX'}))

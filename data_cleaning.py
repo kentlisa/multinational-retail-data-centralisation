@@ -76,10 +76,9 @@ number_of_stores = extractor.list_number_of_stores(number_stores_endp, header_de
 print(number_of_stores)
 
 #store endpoint list
-# store_endpoints = list()
-# for store_number in range(0,3):
-#     store_endpoints.append(f'https://aqj7u5id95.execute-api.eu-west-1.amazonaws.com/prod/number_stores{store_number}')
+store_endpoints = list()
+for store_number in range(0,452):
+    store_endpoints.append(f'https://aqj7u5id95.execute-api.eu-west-1.amazonaws.com/prod/number_stores{store_number}')
 
-store_data = extractor.retrieve_stores_data('https://aqj7u5id95.execute-api.eu-west-1.amazonaws.com/prod/number_stores/2', header_details)
+store_data = extractor.retrieve_stores_data(store_endpoints, header_details)
 print(store_data)
-
