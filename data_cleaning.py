@@ -2,6 +2,7 @@ from database_utils import DatabaseConnector
 from data_extraction import DataExtractor
 import pandas as pd
 import numpy as np
+import re
 
 
 class DataCleaning:
@@ -108,16 +109,83 @@ class DataCleaning:
         store_data.info()
         return store_data
     
-    # @classmethod
-    # def convert_product_weights(self, dataframe):
+    @classmethod
+    def convert_product_weights(self, df):
+        #converts column to string
+        df.weight = df.weight.astype('string')
+
+        #masks entries that need multiplying
+        mask_multiples = df.weight.str.contains('x')
+        multi_df = df.weight[mask_multiples]
+        multi_indices = list(multi_df.index)
+
+        #remove units
+        multi_df = multi_df.str.replace('g', '')
+
+        #split into number of items and weight per item columns
+        multi_df = multi_df.str.split(' x ', expand = True)
+        col_names = {0: 'number', 1: 'weight'}
+        multi_df.rename(columns = col_names, inplace = True)
+        multi_df.number = pd.to_numeric(multi_df.number)
+        multi_df.weight = pd.to_numeric(multi_df.weight)
+
+        #creates total weight column
+        multi_df['total_weight']= multi_df.number * multi_df.weight
+        multi_df.total_weight = multi_df.total_weight.astype('string')
+
+        #replaces weight values in main df
+        for index, new_index in zip(multi_indices, range(0, len(multi_df.total_weight))):
+            df.weight.iloc[index] = multi_df.total_weight.iloc[new_index]
+
+        #removes units from grams and mls
+        df.weight = df.weight.str.replace('ml', '')
+        df.weight = df.weight.str.replace('g', '')
+
+        #mask out kgs
+        mask_kg = df.weight.str.contains('k')
+        kg_df = pd.DataFrame()
+        kg_df['weight'] = df.weight[mask_kg]
+        kg_indices = list(kg_df.index)
+
+        #remove k
+        kg_df.weight = kg_df.weight.str.replace('k', '')
+
+        #convert to grams
+        kg_df.weight = pd.to_numeric(kg_df.weight)
+        kg_df.weight = kg_df.weight * 1000
+
+        #convert back to string column
+        kg_df = kg_df.weight.astype('string')
+
+        #replace values in main df
+        for index, new_index in zip(kg_indices, range(0, 954)):
+            df.weight.iloc[index] = kg_df.iloc[new_index]
+
+        #set weight to numeric column
+        df.weight = pd.to_numeric(df.weight, errors = 'coerce')
+
+        #all entries now in grams, converts to kgs
+        df.weight = df.weight / 1000
+        print(df.weight)
         
 
 
+
+
+extractor = DataExtractor
+# number_of_stores = extractor.list_number_of_stores(number_stores_endp, header_details)
+# print(number_of_stores)
+product_data = extractor.extract_from_s3('s3://data-handling-public/products.csv')
+# print(product_data.info())
+# print(product_data.weight)
 
 cleaner = DataCleaning
 # cleaned_user_data = cleaner.clean_user_data()
 # cleaned_card_data = cleaner.clean_card_data()
 # cleaned_store_data = cleaner.clean_store_data()
+product_data_weights_converted = cleaner.convert_product_weights(product_data)
+#print(product_data_weights_converted)
+# product_data_weights_converted.head()
 
 
 connector = DatabaseConnector
@@ -128,11 +196,3 @@ connector = DatabaseConnector
 # api details
 header_details = {'x-api-key' : 'yFBQbwXe9J3sd6zWVAMrK6lcxxr0q1lr2PT6DDMX'}
 number_stores_endp = 'https://aqj7u5id95.execute-api.eu-west-1.amazonaws.com/prod/number_stores'
-
-
-extractor = DataExtractor
-# number_of_stores = extractor.list_number_of_stores(number_stores_endp, header_details)
-# print(number_of_stores)
-product_data =extractor.extract_from_s3('s3://data-handling-public/products.csv')
-print(product_data.head())
-print(product_data.info())

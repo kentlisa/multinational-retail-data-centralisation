@@ -37,6 +37,7 @@ class DataExtractor:
         s3 = boto3.client('s3')
         split_address = address.split('/')
         s3.download_file(split_address[2], split_address[3], 'products.csv')
-        product_data = pd.read_csv('products.csv', index_col= 0)
+        product_data = pd.read_csv('products.csv')
+        product_data.set_index(pd.Index(range(0,1853)))
         return product_data
         
