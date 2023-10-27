@@ -2,6 +2,7 @@ from database_utils import DatabaseConnector as db_conn
 import pandas as pd
 from tabula import read_pdf
 import requests
+import boto3
 
 class DataExtractor:
     @classmethod
@@ -23,11 +24,19 @@ class DataExtractor:
         return response.text
     
     @classmethod
-    def retrieve_stores_data(self, store_endpoint, headers):
-        # store_data_list = list()
-        response = requests.get(store_endpoint, headers = headers)
-        # store_data_list.append(response)
-        # store_df = pd.DataFrame(store_data_list)
-        return response
+    def retrieve_stores_data(self, store_endpoints : list, headers):
+        store_data_list = list()
+        for endpoint in store_endpoints:
+            response = requests.get(endpoint, headers = headers)
+            store_data_list.append(response.json())
+        store_df = pd.DataFrame(store_data_list)       
+        return store_df
+    
+    @classmethod
+    def extract_from_s3(self, address):
+        s3 = boto3.client('s3')
+        split_address = address.split('/')
+        s3.download_file(split_address[2], split_address[3], 'products.csv')
+        product_data = pd.read_csv('products.csv', index_col= 0)
+        return product_data
         
-print(requests.get('https://aqj7u5id95.execute-api.eu-west-1.amazonaws.com/prod/number_stores/2', headers = {'x-api-key' : 'yFBQbwXe9J3sd6zWVAMrK6lcxxr0q1lr2PT6DDMX'}))
