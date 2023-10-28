@@ -37,7 +37,7 @@ class DataExtractor:
         s3 = boto3.client('s3')
         s3.download_file(bucket, file, file)
         if 'csv' in file:
-            data = pd.read_csv(file)
+            data = pd.read_csv(f'/datafiles/{file}')
         elif 'json' in file:
             data = pd.read_json(file)
         else:
