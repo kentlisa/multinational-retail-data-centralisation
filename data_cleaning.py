@@ -2,13 +2,12 @@ from database_utils import DatabaseConnector
 from data_extraction import DataExtractor
 import pandas as pd
 import numpy as np
-import re
 
 
 class DataCleaning:
     @classmethod
     def clean_user_data(self):
-        user_data = DataExtractor.read_rds_table()
+        user_data = extractor.read_rds_table('legacy_users')
 
         # converts date columns to datetime dtype
         user_data.date_of_birth = pd.to_datetime(user_data.date_of_birth, yearfirst = True, format = 'mixed', errors = 'coerce')
@@ -166,16 +165,47 @@ class DataCleaning:
 
         #all entries now in grams, converts to kgs
         df.weight = df.weight / 1000
-        print(df.weight)
         
+        return df
 
+    @classmethod
+    def clean_products_data(self):
+        df = extractor.extract_from_s3('data-handling-public','products.csv')
+        df.set_index(pd.Index(range(0,1853)))
+        df = self.convert_product_weights(df)
 
+        #drop duplicates
+        df.drop_duplicates(inplace = True)
+
+        #drop nulls
+        df.dropna(inplace = True)
+
+        return df
+    
+    @classmethod
+    def clean_orders_data(self):
+        order_data = extractor.read_rds_table('orders_table')
+
+        #drop unnecesary columns
+        order_data.drop(columns = ['first_name', 'last_name', '1', 'level_0'], inplace = True)
+
+        return order_data
+    
+    @classmethod
+    def clean_date_details(self):
+        #extract json data into dataframe
+        df = extractor.extract_from_s3('data-handling-public','date_details.json')
+
+        #create adn set index column
+        df['index'] = pd.Index(range(0,len(df.month)))
+        df.set_index('index')
+
+        return df
 
 
 extractor = DataExtractor
 # number_of_stores = extractor.list_number_of_stores(number_stores_endp, header_details)
 # print(number_of_stores)
-product_data = extractor.extract_from_s3('s3://data-handling-public/products.csv')
 # print(product_data.info())
 # print(product_data.weight)
 
@@ -183,15 +213,21 @@ cleaner = DataCleaning
 # cleaned_user_data = cleaner.clean_user_data()
 # cleaned_card_data = cleaner.clean_card_data()
 # cleaned_store_data = cleaner.clean_store_data()
-product_data_weights_converted = cleaner.convert_product_weights(product_data)
-#print(product_data_weights_converted)
-# product_data_weights_converted.head()
-
+# product_data = cleaner.convert_product_weights(product_data)
+# product_data = cleaner.clean_products_data()
+# order_data = cleaner.clean_orders_data()
+date_details = cleaner.clean_date_details()
+# print(product_data.info())
 
 connector = DatabaseConnector
+# connector.list_db_tables()
 # connector.upload_to_db(cleaned_user_data, 'dim_users')
 # connector.upload_to_db(cleaned_card_data, 'dim_card_details', index = True)
 # connector.upload_to_db(cleaned_store_data, 'dim_store_details')
+# connector.upload_to_db(product_data, 'dim_products')
+# connector.upload_to_db(order_data, 'orders_table')
+connector.upload_to_db(date_details, 'dim_date_times')
+
 
 # api details
 header_details = {'x-api-key' : 'yFBQbwXe9J3sd6zWVAMrK6lcxxr0q1lr2PT6DDMX'}

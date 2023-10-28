@@ -6,9 +6,9 @@ import boto3
 
 class DataExtractor:
     @classmethod
-    def read_rds_table(self):
-        db_conn.list_db_tables()
-        user_data = pd.read_sql_table('legacy_users', db_conn.engine)
+    def read_rds_table(self, table_name):
+        engine = db_conn.init_db_engine()
+        user_data = pd.read_sql_table(table_name, engine)
         pd.set_option('display.max_columns', None)
         user_data.set_index('index')
         return user_data
@@ -33,11 +33,13 @@ class DataExtractor:
         return store_df
     
     @classmethod
-    def extract_from_s3(self, address):
+    def extract_from_s3(self, bucket, file):
         s3 = boto3.client('s3')
-        split_address = address.split('/')
-        s3.download_file(split_address[2], split_address[3], 'products.csv')
-        product_data = pd.read_csv('products.csv')
-        product_data.set_index(pd.Index(range(0,1853)))
-        return product_data
-        
+        s3.download_file(bucket, file, file)
+        if 'csv' in file:
+            data = pd.read_csv(file)
+        elif 'json' in file:
+            data = pd.read_json(file)
+        else:
+            print('unknown file type')
+        return data
