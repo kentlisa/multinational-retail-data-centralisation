@@ -41,17 +41,10 @@ class DataCleaning:
         user_data.phone_number = user_data.phone_number.str.replace('+1-', '')
         user_data.phone_number = user_data.phone_number.str.replace('-', '')
 
-        # converts all other columns to string dtype
-        user_data.first_name = user_data.first_name.astype('string')  
-        user_data.last_name = user_data.last_name.astype('string')  
-        user_data.company = user_data.company.astype('string')  
-        user_data.email_address = user_data.email_address.astype('string')  
-        user_data.address = user_data.address.astype('string')  
-        user_data.user_uuid = user_data.user_uuid.astype('string')
-
         # removes rows with null date of birth, removes duplicates
         user_data.dropna(subset = 'date_of_birth', inplace = True)
         user_data.drop_duplicates(inplace = True)
+        user_data.drop(columns = 'index', inplace = True)
 
         return user_data
     
@@ -70,18 +63,15 @@ class DataCleaning:
         # drops duplicates
         card_data.drop_duplicates(inplace = True)
 
-        # converts card number column to numeric
-        card_data.card_number = pd.to_numeric(card_data.card_number, errors = 'coerce')
-
-        # converts card provider and expiry date to category
-        card_data.card_provider = card_data.card_provider.astype('category')
-        card_data.expiry_date = card_data.expiry_date.astype('category')
-        
-        # converts date payment confirmed to datetime
-        card_data.date_payment_confirmed = pd.to_datetime(card_data.date_payment_confirmed, format = 'mixed', 
-                                                          yearfirst = True, errors = 'coerce')
-
         # drops rows with null values
+        card_data.dropna(inplace = True)
+
+        # remove stray characters from card numbers
+        card_data.card_number = card_data.card_number.astype('string')
+        card_data.card_number = card_data.card_number.str.replace('?','')
+
+        # drops incorrect rows
+        card_data.card_number = pd.to_numeric(card_data.card_number, errors = 'coerce')
         card_data.dropna(inplace = True)
 
         return card_data
@@ -98,49 +88,37 @@ class DataCleaning:
         # creates list of store enpoints
         store_endpoints = list()
         header_details = {'x-api-key' : 'yFBQbwXe9J3sd6zWVAMrK6lcxxr0q1lr2PT6DDMX'}
-        for store_number in range(1,451):
+        for store_number in range(0,451):
             store_endpoints.append(f'https://aqj7u5id95.execute-api.eu-west-1.amazonaws.com/prod/store_details/{store_number}')
 
         # creates dataframe
         store_data = DataExtractor.retrieve_stores_data(store_endpoints, header_details)
         store_data.set_index('index')
 
-        #removes duplicate rows
+        # removes duplicate rows
         store_data.drop_duplicates()
 
-        #removes rows with incorrect data
-        bad_indices = [62, 171, 413, 380, 216, 404, 436, 230, 446, 332]
+        # removes rows with incorrect data
+        bad_indices = [63, 172, 414, 381, 217, 405, 437, 231, 447, 333]
         store_data.drop(index = bad_indices, inplace = True)
 
-        #removes lat column
-        store_data.drop(columns = 'lat', inplace = True)
-
-        #removes stray characters from continent
+        # removes stray characters from continent
         store_data.continent = store_data.continent.str.replace('ee', '')
 
-        #sets category columns
+        # sets category columns
         store_data.locality = store_data.locality.astype('category')
         store_data.store_type = store_data.store_type.astype('category')
         store_data.country_code = store_data.country_code.astype('category')
         store_data.continent = store_data.continent.astype('category')
 
-        #sets numeric columns
-        store_data.longitude = pd.to_numeric(store_data.longitude, errors = 'coerce')
-        store_data.latitude = pd.to_numeric(store_data.latitude, errors = 'coerce')
-
-        #removes alphabetic characters from staff numbers
-        #sets to numeric
+        # removes alphabetic characters from staff numbers
+        # sets to numeric
         store_data.staff_numbers = store_data.staff_numbers.str.extract('(\d+)', expand=False)
         store_data.staff_numbers = pd.to_numeric(store_data.staff_numbers, errors = 'coerce')
 
-        #sets string columns
-        store_data.address = store_data.address.astype('string')
-        store_data.store_code = store_data.store_code.astype('string')
+        # drop index column
+        store_data.drop(columns = 'index', inplace = True)
 
-        #sets date column
-        store_data.opening_date = pd.to_datetime(store_data.opening_date, errors = 'coerce', format = 'mixed', yearfirst = True)
-
-        store_data.info()
         return store_data
     
     @classmethod
@@ -157,43 +135,43 @@ class DataCleaning:
         product_data : pandas dataframe
             Dataframe containing product data with the weight column in uniform format.
         '''
-        #converts column to string
+        # converts column to string
         product_data.weight = product_data.weight.astype('string')
 
-        #masks entries that need multiplying
-        mask_multiples = product_data.weight.str.contains('x')
-        multi_df = product_data.weight[mask_multiples]
+        # masks entries that need multiplying
+        mask = product_data.weight.str.contains('x')
+        multi_df = product_data.weight[mask]
         multi_indices = list(multi_df.index)
 
-        #remove units
+        # remove units
         multi_df = multi_df.str.replace('g', '')
 
-        #split into number of items and weight per item columns
+        # split into number of items and weight per item columns
         multi_df = multi_df.str.split(' x ', expand = True)
         col_names = {0: 'number', 1: 'weight'}
         multi_df.rename(columns = col_names, inplace = True)
         multi_df.number = pd.to_numeric(multi_df.number)
         multi_df.weight = pd.to_numeric(multi_df.weight)
 
-        #creates total weight column
-        multi_df['total_weight']= multi_df.number * multi_df.weight
+        # multiply to form total weight
+        multi_df['total_weight'] = multi_df.number * multi_df.weight
         multi_df.total_weight = multi_df.total_weight.astype('string')
 
-        #replaces weight values in main df
+        # #replaces weight values in main df
         for index, new_index in zip(multi_indices, range(0, len(multi_df.total_weight))):
             product_data.weight.iloc[index] = multi_df.total_weight.iloc[new_index]
 
-        #removes units from grams and mls
+        # removes units from grams and mls
         product_data.weight = product_data.weight.str.replace('ml', '')
         product_data.weight = product_data.weight.str.replace('g', '')
 
-        #mask out kgs
+        # #mask out kgs
         mask_kg = product_data.weight.str.contains('k')
         kg_df = pd.DataFrame()
-        kg_df['weight'] = df.weight[mask_kg]
+        kg_df['weight'] = product_data.weight[mask_kg]
         kg_indices = list(kg_df.index)
 
-        #remove k
+        # remove k
         kg_df.weight = kg_df.weight.str.replace('k', '')
 
         #convert to grams
@@ -205,7 +183,7 @@ class DataCleaning:
 
         #replace values in main dataframe
         for index, new_index in zip(kg_indices, range(0, 954)):
-            product_data.weight.iloc[index] = kg_df.iloc[new_index]
+            product_data.weight[index] = kg_df.iloc[new_index]
 
         #set weight to numeric column
         product_data.weight = pd.to_numeric(product_data.weight, errors = 'coerce')
@@ -226,7 +204,6 @@ class DataCleaning:
         '''
         # extracts data from s3 bucket, converts to dataframe
         product_data = extractor.extract_from_s3('data-handling-public','products.csv')
-        product_data.set_index(pd.Index(range(0,1853)))
         product_data = self.convert_product_weights(product_data)
 
         #drop duplicates
@@ -234,6 +211,9 @@ class DataCleaning:
 
         #drop nulls
         product_data.dropna(inplace = True)
+
+        #drop index column
+        product_data = product_data.loc[:, ~product_data.columns.str.contains('^Unnamed')]
 
         return product_data
     
@@ -249,8 +229,8 @@ class DataCleaning:
         # extracts order data
         order_data = extractor.read_rds_table('orders_table')
 
-        #drop unnecesary columns
-        order_data.drop(columns = ['first_name', 'last_name', '1', 'level_0'], inplace = True)
+        # drops unnecesary columns
+        order_data.drop(columns = ['first_name', 'last_name', '1', 'level_0', 'index'], inplace = True)
 
         return order_data
     
@@ -266,35 +246,34 @@ class DataCleaning:
         # extract json data into dataframe
         date_details = extractor.extract_from_s3('data-handling-public','date_details.json')
 
-        #create adn set index column
-        date_details['index'] = pd.Index(range(0,len(date_details.month)))
-        date_details.set_index('index')
+        # filters incorrect rows to null in month
+        date_details.month = pd.to_numeric(date_details.month, errors = 'coerce')
+
+        # drops fully null rows and incorrect rows
+        date_details.dropna(inplace = True)
 
         return date_details
 
 
+# extracts number of stores
 extractor = DataExtractor()
-number_of_stores = extractor.list_number_of_stores('https://aqj7u5id95.execute-api.eu-west-1.amazonaws.com/prod/number_stores', {'x-api-key': 'yFBQbwXe9J3sd6zWVAMrK6lcxxr0q1lr2PT6DDMX'})
-print(type(number_of_stores))
-# print(number_of_stores)
-# print(product_data.info())
-# print(product_data.weight)
+# number_of_stores = extractor.list_number_of_stores('https://aqj7u5id95.execute-api.eu-west-1.amazonaws.com/prod/number_stores', {'x-api-key': 'yFBQbwXe9J3sd6zWVAMrK6lcxxr0q1lr2PT6DDMX'})
 
+# cleans all data
 cleaner = DataCleaning
 # cleaned_user_data = cleaner.clean_user_data()
-# cleaned_card_data = cleaner.clean_card_data()
+cleaned_card_data = cleaner.clean_card_data()
 # cleaned_store_data = cleaner.clean_store_data()
-# product_data = cleaner.convert_product_weights(product_data)
-# product_data = cleaner.clean_products_data()
-# order_data = cleaner.clean_orders_data()
-# date_details = cleaner.clean_date_details()
-# print(product_data.info())
+# cleaned_product_data = cleaner.clean_products_data()
+# cleaned_order_data = cleaner.clean_orders_data()
+# cleaned_date_details = cleaner.clean_date_details()
 
+# uploads to database
 connector = DatabaseConnector
 # connector.list_db_tables()
 # connector.upload_to_db(cleaned_user_data, 'dim_users')
-# connector.upload_to_db(cleaned_card_data, 'dim_card_details', index = True)
+connector.upload_to_db(cleaned_card_data, 'dim_card_details')
 # connector.upload_to_db(cleaned_store_data, 'dim_store_details')
-# connector.upload_to_db(product_data, 'dim_products')
-# connector.upload_to_db(order_data, 'orders_table')
-# connector.upload_to_db(date_details, 'dim_date_times')
+# connector.upload_to_db(cleaned_product_data, 'dim_products')
+# connector.upload_to_db(cleaned_order_data, 'orders_table')
+# connector.upload_to_db(cleaned_date_details, 'dim_date_times')
