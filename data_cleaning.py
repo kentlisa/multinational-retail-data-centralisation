@@ -25,7 +25,7 @@ class DataCleaning:
         user_data.country = user_data.country.astype('category')
         user_data.country_code = user_data.country_code.astype('category')
 
-        # censures email address are in correct format
+        # ensures email address are in correct format
         regex_expression = '^.+@[^\.].*\.[a-z]{2,}$'
         user_data.loc[~user_data.email_address.str.match(regex_expression), 'email_address'] = np.nan
         
@@ -138,9 +138,12 @@ class DataCleaning:
         # converts column to string
         product_data.weight = product_data.weight.astype('string')
 
+        # remove stray . char
+        product_data.weight = product_data.weight.str.replace(' .', '')
+
         # masks entries that need multiplying
-        mask = product_data.weight.str.contains('x')
-        multi_df = product_data.weight[mask]
+        mask_multi = product_data.weight.str.contains('x')
+        multi_df = product_data.weight[mask_multi]
         multi_indices = list(multi_df.index)
 
         # remove units
@@ -157,7 +160,7 @@ class DataCleaning:
         multi_df['total_weight'] = multi_df.number * multi_df.weight
         multi_df.total_weight = multi_df.total_weight.astype('string')
 
-        # #replaces weight values in main df
+        # replaces weight values in main df
         for index, new_index in zip(multi_indices, range(0, len(multi_df.total_weight))):
             product_data.weight.iloc[index] = multi_df.total_weight.iloc[new_index]
 
@@ -165,7 +168,7 @@ class DataCleaning:
         product_data.weight = product_data.weight.str.replace('ml', '')
         product_data.weight = product_data.weight.str.replace('g', '')
 
-        # #mask out kgs
+        # mask out kgs
         mask_kg = product_data.weight.str.contains('k')
         kg_df = pd.DataFrame()
         kg_df['weight'] = product_data.weight[mask_kg]
@@ -174,16 +177,32 @@ class DataCleaning:
         # remove k
         kg_df.weight = kg_df.weight.str.replace('k', '')
 
-        #convert to grams
+        # convert to grams
         kg_df.weight = pd.to_numeric(kg_df.weight)
         kg_df.weight = kg_df.weight * 1000
 
-        #convert back to string column
+        # convert back to string column
         kg_df = kg_df.weight.astype('string')
 
-        #replace values in main dataframe
+        # replace values in main dataframe
         for index, new_index in zip(kg_indices, range(0, 954)):
             product_data.weight[index] = kg_df.iloc[new_index]
+
+        # mask oz weight
+        mask_oz = product_data.weight.str.contains('oz')
+        oz_df = product_data.weight[mask_oz]
+        oz_index = list(oz_df.index)
+
+        # remove unit
+        oz_df = oz_df.str.replace('oz', '')
+        
+        # convert to grams
+        oz_df = pd.to_numeric(oz_df)
+        oz_df = round(oz_df * 28.34950000001049, 2)
+        oz_df = oz_df.astype('string')
+
+        # insert back into main df
+        product_data.weight[1841] = oz_df.iloc[0]
 
         #set weight to numeric column
         product_data.weight = pd.to_numeric(product_data.weight, errors = 'coerce')
@@ -262,9 +281,9 @@ extractor = DataExtractor()
 # cleans all data
 cleaner = DataCleaning
 # cleaned_user_data = cleaner.clean_user_data()
-cleaned_card_data = cleaner.clean_card_data()
+# cleaned_card_data = cleaner.clean_card_data()
 # cleaned_store_data = cleaner.clean_store_data()
-# cleaned_product_data = cleaner.clean_products_data()
+cleaned_product_data = cleaner.clean_products_data()
 # cleaned_order_data = cleaner.clean_orders_data()
 # cleaned_date_details = cleaner.clean_date_details()
 
@@ -272,8 +291,8 @@ cleaned_card_data = cleaner.clean_card_data()
 connector = DatabaseConnector
 # connector.list_db_tables()
 # connector.upload_to_db(cleaned_user_data, 'dim_users')
-connector.upload_to_db(cleaned_card_data, 'dim_card_details')
+# connector.upload_to_db(cleaned_card_data, 'dim_card_details')
 # connector.upload_to_db(cleaned_store_data, 'dim_store_details')
-# connector.upload_to_db(cleaned_product_data, 'dim_products')
+connector.upload_to_db(cleaned_product_data, 'dim_products')
 # connector.upload_to_db(cleaned_order_data, 'orders_table')
 # connector.upload_to_db(cleaned_date_details, 'dim_date_times')

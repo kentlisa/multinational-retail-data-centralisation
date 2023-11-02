@@ -61,6 +61,10 @@ UPDATE dim_store_details
 SET longitude = NULL
 WHERE longitude = 'N/A';
 
+UPDATE dim_store_details
+SET locality = NULL
+WHERE locality = 'N/A';
+
 ALTER TABLE dim_store_details
 DROP COLUMN lat;
 
@@ -204,3 +208,49 @@ ALTER TABLE dim_card_details
 ALTER COLUMN date_payment_confirmed
 TYPE DATE
 USING date_payment_confirmed::DATE;
+
+
+-- set primary keys for dim tables
+
+ALTER TABLE dim_card_details
+ADD PRIMARY KEY (card_number);
+
+ALTER TABLE dim_date_times
+ADD PRIMARY KEY (date_uuid);
+
+ALTER TABLE dim_products
+ADD PRIMARY KEY (product_code);
+
+ALTER TABLE dim_store_details
+ADD PRIMARY KEY (store_code);
+
+ALTER TABLE dim_users 
+ADD PRIMARY KEY (user_uuid);
+
+
+-- add foreign keys to orders table
+
+ALTER TABLE orders_table
+ADD CONSTRAINT fk_card_numbers 
+FOREIGN KEY (card_number) 
+REFERENCES dim_card_details (card_number);
+
+ALTER TABLE orders_table
+ADD CONSTRAINT fk_date_uuids
+FOREIGN KEY (date_uuid) 
+REFERENCES dim_date_times (date_uuid);
+
+ALTER TABLE orders_table
+ADD CONSTRAINT fk_product_codes
+FOREIGN KEY (product_code)
+REFERENCES dim_products (product_code);
+
+ALTER TABLE orders_table
+ADD CONSTRAINT fk_store_codes
+FOREIGN KEY (store_code) 
+REFERENCES dim_store_details (store_code);
+
+ALTER TABLE orders_table
+ADD CONSTRAINT fk_user_uuids
+FOREIGN KEY (user_uuid) 
+REFERENCES dim_users (user_uuid);
