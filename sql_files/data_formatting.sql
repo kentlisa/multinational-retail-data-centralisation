@@ -57,14 +57,6 @@ TYPE DATE;
 
 -- orders table column type casting
 
-UPDATE dim_store_details
-SET longitude = NULL
-WHERE longitude = 'N/A';
-
-UPDATE dim_store_details
-SET locality = NULL
-WHERE locality = 'N/A';
-
 ALTER TABLE dim_store_details
 DROP COLUMN lat;
 

@@ -1,4 +1,3 @@
-from database_utils import DatabaseConnector
 from data_extraction import DataExtractor
 import pandas as pd
 import numpy as np
@@ -15,7 +14,7 @@ class DataCleaning:
             Dataframe containing the cleaned user data.
         '''
         # reads in user data
-        user_data = extractor.read_rds_table('legacy_users')
+        user_data = DataExtractor.read_rds_table('legacy_users')
 
         # converts date columns to datetime dtype
         user_data.date_of_birth = pd.to_datetime(user_data.date_of_birth, yearfirst = True, format = 'mixed', errors = 'coerce')
@@ -222,7 +221,7 @@ class DataCleaning:
             Dataframe containing cleaned product data.
         '''
         # extracts data from s3 bucket, converts to dataframe
-        product_data = extractor.extract_from_s3('data-handling-public','products.csv')
+        product_data = DataExtractor.extract_from_s3('data-handling-public','products.csv')
         product_data = self.convert_product_weights(product_data)
 
         #drop duplicates
@@ -246,7 +245,7 @@ class DataCleaning:
             Dataframe containing the cleaned order data.
         '''
         # extracts order data
-        order_data = extractor.read_rds_table('orders_table')
+        order_data = DataExtractor.read_rds_table('orders_table')
 
         # drops unnecesary columns
         order_data.drop(columns = ['first_name', 'last_name', '1', 'level_0', 'index'], inplace = True)
@@ -263,7 +262,7 @@ class DataCleaning:
             Dataframe containing the cleaned date details.
         '''
         # extract json data into dataframe
-        date_details = extractor.extract_from_s3('data-handling-public','date_details.json')
+        date_details = DataExtractor.extract_from_s3('data-handling-public','date_details.json')
 
         # filters incorrect rows to null in month
         date_details.month = pd.to_numeric(date_details.month, errors = 'coerce')
@@ -272,27 +271,4 @@ class DataCleaning:
         date_details.dropna(inplace = True)
 
         return date_details
-
-
-# extracts number of stores
-extractor = DataExtractor()
-# number_of_stores = extractor.list_number_of_stores('https://aqj7u5id95.execute-api.eu-west-1.amazonaws.com/prod/number_stores', {'x-api-key': 'yFBQbwXe9J3sd6zWVAMrK6lcxxr0q1lr2PT6DDMX'})
-
-# cleans all data
-cleaner = DataCleaning
-# cleaned_user_data = cleaner.clean_user_data()
-# cleaned_card_data = cleaner.clean_card_data()
-# cleaned_store_data = cleaner.clean_store_data()
-cleaned_product_data = cleaner.clean_products_data()
-# cleaned_order_data = cleaner.clean_orders_data()
-# cleaned_date_details = cleaner.clean_date_details()
-
-# uploads to database
-connector = DatabaseConnector
-# connector.list_db_tables()
-# connector.upload_to_db(cleaned_user_data, 'dim_users')
-# connector.upload_to_db(cleaned_card_data, 'dim_card_details')
-# connector.upload_to_db(cleaned_store_data, 'dim_store_details')
-connector.upload_to_db(cleaned_product_data, 'dim_products')
-# connector.upload_to_db(cleaned_order_data, 'orders_table')
-# connector.upload_to_db(cleaned_date_details, 'dim_date_times')
+    

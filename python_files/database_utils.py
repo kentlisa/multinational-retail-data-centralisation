@@ -13,7 +13,7 @@ class DatabaseConnector:
         creds : dict
             Database connection credentials.
         '''
-        with open('.gitignore/db_creds.yaml','r') as file:
+        with open('../.gitignore/db_creds.yaml','r') as file:
                 try:
                     creds = yaml.safe_load(file)
                     return creds
@@ -80,4 +80,4 @@ class DatabaseConnector:
 
         #creates engine for local database
         engine = create_engine(f"{DATABASE_TYPE}+{DBAPI}://{USER}:{PASSWORD}@{HOST}:{PORT}/{DATABASE}")
-        data_frame.to_sql(name = table_name, con = engine, if_exists = 'replace', index = index, index_label = index_name)
+        data_frame.to_sql(name = table_name, con = engine, if_exists = 'append', index = index, index_label = index_name)

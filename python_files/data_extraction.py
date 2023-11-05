@@ -107,12 +107,12 @@ class DataExtractor:
         '''
         # connects to s3
         s3 = boto3.client('s3')
-        s3.download_file(bucket, file, file)
+        s3.download_file(bucket, file, f'..\\raw_data_files\{file}')
         # converts to dataframe for given filetype
         if 'csv' in file:
-            df = pd.read_csv(file)
+            df = pd.read_csv(f'..\\raw_data_files\{file}')
         elif 'json' in file:
-            df = pd.read_json(file)
+            df = pd.read_json(f'..\\raw_data_files\{file}')
         else:
             print('Can only extract from json or csv files.')
         return df
