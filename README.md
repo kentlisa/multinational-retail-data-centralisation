@@ -11,16 +11,18 @@ It puts into practise my skills in OOP, with three classes that perform operatio
    * [1.2. Data Extractor](#12-data-extractor)
    * [1.3. Data Cleaning](#13-data-cleaning)
    * [1.4. SQL](#14-sql)
-- [2. Installation](#2-installation)
-- [3. Usage](#3-usage)
-- [4. File Structure](#4-file-structure)
-- [5. License Information](#5-license-information)
+- [2. Dependencies](#2-dependencies)
+- [3. Installation](#3-installation)
+- [4. Usage](#4-usage)
+- [5. File Structure](#5-file-structure)
 
 ## 1. The Code
-There are 3 classes in this project.
-- DatabaseConnector (1.1.) is in ```database_utils.py``` ;  it contains methods that interact with the database
-- DatabaseExtractor (1.2.) is in ```data_extraction.py``` ;  it contains methods that extract data from various sources. 
-- DataCleaning (1.3.) is in ```data_cleaning.py``` ; it contains methods that clean the various data.
+There are 3 classes in this project:
+- **DatabaseConnector** is in ```database_utils.py``` ;  it contains methods that interact with the database
+- **DatabaseExtractor** is in ```data_extraction.py``` ;  it contains methods that extract data from various sources. 
+- **DataCleaning** is in ```data_cleaning.py``` ; it contains methods that clean the various data.
+
+```main.py``` initialises the class and runs the project.
 
 ### 1.1. Database Connector
 
@@ -63,7 +65,7 @@ The SQL files have been split into two for clarity.
 8. Which German store type is selling the most?
 9. How quickly is the company making sales?
 
-## Dependencies
+## 2. Dependencies
 Install the following python packages before running the project:
 
 - pandas
@@ -74,7 +76,7 @@ Install the following python packages before running the project:
 - requests
 - boto3
 
-## Installation
+## 3. Installation
 To begin the project, clone the repo by running the following line in your terminal:
 
 ```
@@ -87,7 +89,7 @@ Or, if you have GitHub CLI then run the following:
 gh repo clone kentlisa/multinational-retail-data-centralisation
 ```
 
-## 3. Usage
+## 4. Usage
 
 Begin by running the python element of the project by running:
 ```
@@ -107,7 +109,7 @@ Then run:
  ``` 
  This will present the solutions to the nine questions outlined in Section 1.4.
 
-## 4. File Structure
+## 5. File Structure
 ```
 ├── python_files
 │   ├── data_cleaning.py
