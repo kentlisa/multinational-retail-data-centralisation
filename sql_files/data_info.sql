@@ -137,35 +137,30 @@ ORDER BY
 
 -- average time between sales
 
-WITH cte AS (
-SELECT  year,
-        month,
-        day,
-        timestamp::time
-FROM 
-    dim_date_times
-ORDER BY
-    year ASC, month ASC, day ASC, timestamp ASC
+WITH cte AS ( 
+    SELECT  year,
+            CONCAT(make_date(year::INT, month::INT, day::INT), ' ', timestamp)::timestamp AS timestamp
+    FROM
+        dim_date_times
+    ORDER BY
+        year, timestamp
 ),
 cte2 AS (
-SELECT  year,
-        LEAD(timestamp, 1) OVER (
-            PARTITION BY year
-        ) AS time_difference
-FROM
-    cte
-GROUP BY
-    year, timestamp
+    SELECT  year,
+            timestamp,
+            LEAD(timestamp) OVER (
+                ORDER BY year
+            ) AS next_timestamp
+    FROM 
+        cte
 )
-SELECT year,
-        time_difference
-FROM cte2;
-
 SELECT  year,
-        AVG(time_difference) AS actual_time_taken
+        AVG(next_timestamp - timestamp) as actual_time_taken
 FROM
     cte2
 GROUP BY
     year
 ORDER BY
-    actual_time_taken DESC;
+    actual_time_taken DESC
+LIMIT
+    5;
