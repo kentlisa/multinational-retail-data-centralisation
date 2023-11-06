@@ -1,7 +1,7 @@
 # Multinational Retail Data Centralisation
 ---
-The premise of this project is a multinational retail organisation, whose data is disorganised and unclear. This brings all the data into one source so that easy analysis can take place.\
-It puts into practise my skills in OOP, with three classes that perform operations on the data and the database. Clearly, strong SQL skills were also essential for this project, and were utilised in manipulating the database and performing analysis.
+The project begins with a large retail corporation whose data is disorganised and difficult to manage. This project brings all the data into one place, in a concise manner.\
+It puts into practise my skills in OOP, with three classes that perform operations on the data and the database. Complex SQL queries were used to perform analysis on the final database, including the use of subqueries, joins and CTEs.
 
 
 ## Table of Contents
@@ -63,9 +63,8 @@ The SQL files have been split into two for clarity.
 8. Which German store type is selling the most?
 9. How quickly is the company making sales?
 
-## Installation
-
-Ensure you have python and PostgreSQL installed before attemping to run the project. Install the following python packages:
+## Dependencies
+Install the following python packages before running the project:
 
 - pandas
 - numpy
@@ -75,7 +74,8 @@ Ensure you have python and PostgreSQL installed before attemping to run the proj
 - requests
 - boto3
 
-Simply clone the repo by running the following line in your terminal:
+## Installation
+To begin the project, clone the repo by running the following line in your terminal:
 
 ```
 git clone https://github.com/kentlisa/multinational-retail-data-centralisation.git
@@ -89,9 +89,23 @@ gh repo clone kentlisa/multinational-retail-data-centralisation
 
 ## 3. Usage
 
-Begin by running the python element of the project by running the ``` main.py ``` file.
+Begin by running the python element of the project by running:
+```
+main.py
+``` 
+This gathers all the data, cleans it and uploads to the database.
 
-Make sure you have connected to the database, then run ```data_formatting.sql```, followed by ```data_info.sql```. The latter file will output the solutions to the nine questions outlined in Section 1.4.
+Then run:
+ ```
+ data_formatting.sql
+ ```
+ This casts the data types for all columns, then sets up the primary and foreign keys.
+
+ Followed by:
+ ```
+ data_info.sql
+ ``` 
+ This will present the solutions to the nine questions outlined in Section 1.4.
 
 ## 4. File Structure
 ```
@@ -103,9 +117,6 @@ Make sure you have connected to the database, then run ```data_formatting.sql```
 ├── raw_data_files
 │   ├── date_details.json
 │   └── products.csv
-├── screenshots
-│   ├── 
-│   └── 
 ├── sql_files
 │   ├── data_formatting.sql
 │   └── data_info.sql
