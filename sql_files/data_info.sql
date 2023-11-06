@@ -58,7 +58,7 @@ ORDER BY
 
 -- sales per store type
 
-WITH cte AS (
+WITH sales_per_store_type AS (
 SELECT  dim_store_details.store_type AS store_type,
         ROUND(SUM(dim_products.product_price * product_quantity)::NUMERIC, 2) AS total_sales
 FROM orders_table
@@ -69,16 +69,16 @@ JOIN
 GROUP BY
     dim_store_details.store_type
 ),
-cte2 AS (
+all_sales_value AS (
 SELECT SUM(total_sales) AS all_sales_value
 FROM 
-    cte
+    sales_per_store_type
 )
 SELECT  store_type,
         total_sales,
-        ROUND(total_sales * 100 / all_sales_value, 2) AS percentage_total
+        ROUND(total_sales * 100 / all_sales_value, 2) AS "percentage_total (%)"
 FROM
-    cte, cte2
+    sales_per_store_type, all_sales_value
 GROUP BY
     store_type, total_sales, all_sales_value
 ORDER BY 
@@ -137,7 +137,7 @@ ORDER BY
 
 -- average time between sales
 
-WITH cte AS ( 
+WITH year_and_timestamp AS ( 
     SELECT  year,
             CONCAT(make_date(year::INT, month::INT, day::INT), ' ', timestamp)::timestamp AS timestamp
     FROM
@@ -145,19 +145,19 @@ WITH cte AS (
     ORDER BY
         year, timestamp
 ),
-cte2 AS (
+lead_timestamp AS (
     SELECT  year,
             timestamp,
             LEAD(timestamp) OVER (
                 ORDER BY year
             ) AS next_timestamp
     FROM 
-        cte
+        year_and_timestamp
 )
 SELECT  year,
         AVG(next_timestamp - timestamp) as actual_time_taken
 FROM
-    cte2
+    lead_timestamp
 GROUP BY
     year
 ORDER BY
